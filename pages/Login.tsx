@@ -19,11 +19,16 @@ const Login: React.FC = () => {
     e.preventDefault();
     setIsSetupLoading(true);
     setError('');
-    const success = await login(email, password);
-    if (!success) {
-      setError('Acesso negado. Verifique seu e-mail e senha.');
+    try {
+      const success = await login(email, password);
+      if (!success) {
+        setError('Acesso negado. Verifique seu e-mail e senha.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao realizar login.');
+    } finally {
+      setIsSetupLoading(false);
     }
-    setIsSetupLoading(false);
   };
 
   const handleFirstSetup = async (e: React.FormEvent) => {
