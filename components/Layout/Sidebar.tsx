@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         </button>
                     </div>
                     <div className="bg-white/50 rounded-2xl p-3 border border-slate-100 text-center">
-                        <p className="text-[9px] font-black text-slate-400/80 uppercase tracking-widest">v3.6.0 Premium</p>
+                        <p className="text-[9px] font-black text-slate-400/80 uppercase tracking-widest">v3.7.0 Premium</p>
                     </div>
                 </div>
             </aside>
