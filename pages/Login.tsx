@@ -5,12 +5,13 @@ import { useSchool, formatImageUrl } from '../context/SchoolContext';
 const Login: React.FC = () => {
   const { login, data, loading, dbError, createFirstAdmin, refreshData } = useSchool();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isSetupLoading, setIsSetupLoading] = useState(false);
   const [error, setError] = useState('');
 
   const isSystemEmpty = !loading && !dbError && data.users.length === 0;
-  
+
   // Obtém a logo do sistema das configurações ou usa a padrão definida no contexto
   const systemLogoUrl = formatImageUrl(data.settings.systemLogo);
 
@@ -18,9 +19,9 @@ const Login: React.FC = () => {
     e.preventDefault();
     setIsSetupLoading(true);
     setError('');
-    const success = await login(email);
+    const success = await login(email, password);
     if (!success) {
-      setError('Acesso negado. E-mail não cadastrado na lista de permissões.');
+      setError('Acesso negado. Verifique seu e-mail e senha.');
     }
     setIsSetupLoading(false);
   };
@@ -64,7 +65,7 @@ const Login: React.FC = () => {
 
           <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
             <p className="text-sm text-slate-600 leading-relaxed font-medium">
-              Como estamos implementando um sistema de permissões, você precisa criar a tabela de usuários. 
+              Como estamos implementando um sistema de permissões, você precisa criar a tabela de usuários.
               Siga os passos abaixo:
             </p>
             <ol className="text-xs text-slate-500 space-y-2 list-decimal list-inside font-bold uppercase tracking-tight">
@@ -72,10 +73,10 @@ const Login: React.FC = () => {
               <li>Clique no menu <strong>SQL Editor</strong> na lateral esquerda</li>
               <li>Clique em <strong>New Query</strong> e cole o código abaixo:</li>
             </ol>
-            
+
             <div className="relative group">
               <pre className="bg-slate-900 text-indigo-300 p-6 rounded-2xl text-[10px] font-mono overflow-x-auto shadow-inner select-all">
-{`CREATE TABLE IF NOT EXISTS public.users (
+                {`CREATE TABLE IF NOT EXISTS public.users (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   email text UNIQUE NOT NULL,
   name text NOT NULL,
@@ -96,7 +97,7 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
             </p>
           </div>
 
-          <button 
+          <button
             onClick={() => { refreshData(); }}
             className="w-full py-5 bg-[#0A1128] text-white rounded-[24px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-800 transition-all active:scale-95"
           >
@@ -113,7 +114,7 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
         <div className="w-full max-w-md bg-white rounded-[48px] shadow-2xl border border-slate-100 p-12 space-y-10 animate-in zoom-in-95 duration-500">
           <div className="text-center space-y-4">
             <div className="w-20 h-20 bg-emerald-600 rounded-[28px] flex items-center justify-center mx-auto shadow-2xl shadow-emerald-200">
-               <span className="text-3xl">🛡️</span>
+              <span className="text-3xl">🛡️</span>
             </div>
             <div>
               <h1 className="text-3xl font-black text-slate-800 tracking-tighter">Configuração Inicial</h1>
@@ -128,7 +129,7 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
           <form onSubmit={handleFirstSetup} className="space-y-5">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Seu Nome Completo</label>
-              <input 
+              <input
                 required
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -138,7 +139,7 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Seu E-mail (Google/MS)</label>
-              <input 
+              <input
                 required
                 type="email"
                 value={email}
@@ -150,8 +151,8 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
 
             {error && <p className="text-center text-red-500 text-[10px] font-bold uppercase bg-red-50 p-3 rounded-xl">{error}</p>}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isSetupLoading}
               className="w-full py-5 bg-emerald-600 text-white rounded-[24px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50"
             >
@@ -168,11 +169,11 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
       <div className="w-full max-w-md bg-white rounded-[48px] shadow-2xl border border-slate-100 p-12 space-y-10 animate-in zoom-in-95 duration-500">
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center mx-auto mb-4">
-             {systemLogoUrl ? (
-               <img src={systemLogoUrl} alt="Logo" className="h-32 w-auto object-contain" />
-             ) : (
-               <div className="w-24 h-24 bg-indigo-600 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-indigo-200 font-black text-2xl">SEI</div>
-             )}
+            {systemLogoUrl ? (
+              <img src={systemLogoUrl} alt="Logo" className="h-32 w-auto object-contain" />
+            ) : (
+              <div className="w-24 h-24 bg-indigo-600 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-indigo-200 font-black text-2xl">SEI</div>
+            )}
           </div>
           <div>
             <h1 className="text-3xl font-black text-slate-800 tracking-tighter">Bem-vindo ao SEI</h1>
@@ -183,7 +184,7 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">E-mail de Acesso</label>
-            <input 
+            <input
               required
               type="email"
               value={email}
@@ -193,10 +194,22 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
             />
           </div>
 
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Senha</label>
+            <input
+              required
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[24px] outline-none font-bold text-slate-700 focus:bg-white focus:border-indigo-300 transition-all shadow-inner"
+            />
+          </div>
+
           {error && <p className="text-center text-red-500 text-[10px] font-bold uppercase bg-red-50 p-3 rounded-xl border border-red-100">{error}</p>}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isSetupLoading}
             className="w-full py-5 bg-[#0A1128] text-white rounded-[24px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50"
           >
@@ -213,18 +226,18 @@ CREATE POLICY "Acesso Total" ON public.users FOR ALL USING (true);`}
 
           <div className="grid grid-cols-2 gap-4">
             <button onClick={() => setEmail('professor@gmail.com')} className="flex items-center justify-center gap-3 py-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-               <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" className="w-5 h-5" alt="Google" />
-               <span className="text-[10px] font-black text-slate-600 uppercase">Google</span>
+              <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" className="w-5 h-5" alt="Google" />
+              <span className="text-[10px] font-black text-slate-600 uppercase">Google</span>
             </button>
             <button onClick={() => setEmail('secretaria@outlook.com')} className="flex items-center justify-center gap-3 py-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-               <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" className="w-5 h-5" alt="MS" />
-               <span className="text-[10px] font-black text-slate-600 uppercase">Microsoft</span>
+              <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" className="w-5 h-5" alt="MS" />
+              <span className="text-[10px] font-black text-slate-600 uppercase">Microsoft</span>
             </button>
           </div>
         </div>
 
         <p className="text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest leading-relaxed">
-          Acesso restrito para colaboradores autorizados.<br/>
+          Acesso restrito para colaboradores autorizados.<br />
           Caso não consiga entrar, procure o TI da escola.
         </p>
       </div>

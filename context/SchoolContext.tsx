@@ -57,8 +57,8 @@ export interface SchoolContextType {
   loading: boolean;
   dbError: string | null;
   currentUser: AppUser | null;
-  login: (email: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password?: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   updateProfile: (name: string) => Promise<void>;
   fetchData: () => Promise<void>;
   addStudent: (s: any) => Promise<void>;
@@ -89,10 +89,7 @@ export interface SchoolContextType {
 const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
 
 export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
-    const saved = localStorage.getItem('sei_session');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
 
   const [data, setData] = useState<SchoolData>({
     students: [], teachers: [], subjects: [], classes: [],
@@ -165,14 +162,48 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, []);
 
+  useEffect(() => {
+    // Escutar mudanças na autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        // Buscar dados extras do usuário na tabela public.users
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (userData) {
+          setCurrentUser(toCamel(userData));
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const login = async (email: string): Promise<boolean> => {
-    const user = data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (user) {
-      setCurrentUser(user);
-      localStorage.setItem('sei_session', JSON.stringify(user));
-      return true;
+  const login = async (email: string, password?: string): Promise<boolean> => {
+    try {
+      if (password) {
+        // Login Oficial via Supabase Auth
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        return true;
+      } else {
+        // Fallback para o modo Legado (simula login apenas por e-mail se necessário)
+        const user = data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (user) {
+          setCurrentUser(user);
+          return true;
+        }
+      }
+    } catch (error: any) {
+      console.error("Login Error:", error.message);
+      throw error;
     }
     return false;
   };
@@ -206,9 +237,9 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setCurrentUser(null);
-    localStorage.removeItem('sei_session');
   };
 
   const updateSettings = async (s: Partial<SchoolSettings>) => {
