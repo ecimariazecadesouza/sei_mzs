@@ -292,8 +292,9 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
     setCurrentUser(null);
+    localStorage.removeItem('sei_session');
+    await supabase.auth.signOut();
   };
 
   const updateSettings = async (s: Partial<SchoolSettings>) => {

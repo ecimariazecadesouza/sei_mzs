@@ -14,7 +14,7 @@ export const MENU_PERMISSIONS: Record<string, UserRole[]> = {
   '/students': ['admin_ti', 'admin_dir', 'coord', 'prof', 'sec'],
   '/grades': ['admin_ti', 'admin_dir', 'coord', 'prof', 'sec'],
   '/council': ['admin_ti', 'admin_dir', 'coord', 'prof'],
-  '/analytics': ['admin_ti', 'admin_dir', 'coord', 'guest'],
+  '/analytics': ['admin_ti', 'admin_dir', 'coord', 'prof', 'sec', 'guest'],
   '/reports': ['admin_ti', 'admin_dir', 'coord', 'prof', 'sec'],
   '/users': ['admin_ti'],
   '/settings': ['admin_ti', 'admin_dir', 'coord', 'prof', 'sec'],
