@@ -178,16 +178,30 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   useEffect(() => {
     // Verificação proativa de link de convite ou recuperação na URL
-    const hash = window.location.hash;
-    if (hash && (hash.includes('type=invite') || hash.includes('type=recovery') || hash.includes('access_token='))) {
-      console.log("Detectado link de convite/recuperação no Hash");
-      setIsSettingPassword(true);
-    }
+    const checkForInvite = () => {
+      const url = new URL(window.location.href);
+      const hash = window.location.hash;
+      const searchParams = url.searchParams;
+
+      const isInvite = hash.includes('type=invite') ||
+        hash.includes('type=recovery') ||
+        hash.includes('access_token=') ||
+        searchParams.has('token') ||
+        searchParams.get('type') === 'invite';
+
+      if (isInvite) {
+        console.log("INVITE DETECTED! Blocking normal flow.");
+        setIsSettingPassword(true);
+      }
+    };
+
+    checkForInvite();
 
     // Escutar mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("AUTH EVENT:", event);
-      if (event === 'PASSWORD_RECOVERY') {
+      console.log("AUTH EVENT:", event, "SESSION:", session?.user?.id);
+
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && window.location.hash.includes('type=invite'))) {
         setIsSettingPassword(true);
       }
 

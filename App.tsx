@@ -37,8 +37,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AuthenticatedApp: React.FC = () => {
   const { currentUser, isSettingPassword } = useSchool();
 
-  if (!currentUser) return <Login />;
-
   if (isSettingPassword) {
     return (
       <Suspense fallback={<Loading />}>
@@ -46,6 +44,8 @@ const AuthenticatedApp: React.FC = () => {
       </Suspense>
     );
   }
+
+  if (!currentUser) return <Login />;
 
   return (
     <Layout>
