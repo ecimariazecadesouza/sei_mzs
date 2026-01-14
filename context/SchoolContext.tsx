@@ -202,7 +202,7 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       }
     } catch (error: any) {
-      console.error("Login Error:", error.message);
+      console.error("LOGIN FUNCTION ERROR:", error.message || error);
       throw error;
     }
     return false;

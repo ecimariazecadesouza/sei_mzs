@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useSchool, formatImageUrl } from '../context/SchoolContext';
 
 const Login: React.FC = () => {
+  console.log("LOGIN COMPONENT VERSION: 3.6.1 (Auth Enabled)");
   const { login, data, loading, dbError, createFirstAdmin, refreshData } = useSchool();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
