@@ -177,6 +177,13 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, []);
 
   useEffect(() => {
+    // Verificação proativa de link de convite ou recuperação na URL
+    const hash = window.location.hash;
+    if (hash && (hash.includes('type=invite') || hash.includes('type=recovery') || hash.includes('access_token='))) {
+      console.log("Detectado link de convite/recuperação no Hash");
+      setIsSettingPassword(true);
+    }
+
     // Escutar mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("AUTH EVENT:", event);
