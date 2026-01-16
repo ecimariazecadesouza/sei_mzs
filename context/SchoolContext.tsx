@@ -57,6 +57,7 @@ export interface SchoolContextType {
   data: SchoolData;
   loading: boolean;
   dbError: string | null;
+  hasUsers: boolean;
   currentUser: AppUser | null;
   login: (email: string, password?: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -109,6 +110,7 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   });
 
   const [loading, setLoading] = useState(true);
+  const [hasUsers, setHasUsers] = useState(true); // Default to true to prevent flickering setup screen
   const [dbError, setDbError] = useState<string | null>(null);
   const [isSettingPassword, setIsSettingPassword] = useState(false);
 
@@ -119,6 +121,16 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const tables = Object.entries(TABLE_MAP);
 
     try {
+      // Check system initialization status safely via RPC
+      const { data: systemHasUsers, error: rpcError } = await supabase.rpc('system_has_users');
+      if (!rpcError && systemHasUsers !== null) {
+        setHasUsers(systemHasUsers);
+      } else {
+        // Fallback or error handling
+        console.warn("Failed to check system status via RPC, assuming initialized.", rpcError);
+        setHasUsers(true);
+      }
+
       const fetchWithTimeout = async (stateKey: string, tableName: string, retries = 3) => {
         for (let attempt = 1; attempt <= retries; attempt++) {
           try {
@@ -456,7 +468,7 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const value = useMemo(() => ({
-    data, loading, dbError, currentUser, login, logout, updateProfile, fetchData,
+    data, loading, dbError, hasUsers, currentUser, login, logout, updateProfile, fetchData,
     addStudent, updateStudent, addTeacher, updateTeacher,
     addSubject, updateSubject, addClass, updateClass,
     addFormation, updateFormation, addKnowledgeArea, updateKnowledgeArea,

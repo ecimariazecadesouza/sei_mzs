@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useSchool, formatImageUrl } from '../context/SchoolContext';
 
 const Login: React.FC = () => {
-  const { login, data, loading, dbError, createFirstAdmin, refreshData, requestPasswordReset } = useSchool();
+  const { login, data, loading, dbError, hasUsers, createFirstAdmin, refreshData, requestPasswordReset } = useSchool();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -12,7 +12,8 @@ const Login: React.FC = () => {
   const [isRecovering, setIsRecovering] = useState(false);
   const [recoverySuccess, setRecoverySuccess] = useState(false);
 
-  const isSystemEmpty = !loading && !dbError && data.users.length === 0;
+  // Use the safe RPC-backed flag instead of list length
+  const isSystemEmpty = !loading && !dbError && !hasUsers;
 
   // Obtém a logo do sistema das configurações ou usa a padrão definida no contexto
   const systemLogoUrl = formatImageUrl(data.settings.systemLogo);

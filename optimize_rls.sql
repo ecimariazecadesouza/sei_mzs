@@ -20,6 +20,17 @@ RETURNS boolean AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER;
 
+-- 0.1 Helper Function: system_has_users()
+-- Allows frontend to check if setup is needed without exposing user data
+CREATE OR REPLACE FUNCTION public.system_has_users()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.users);
+$$;
+GRANT EXECUTE ON FUNCTION public.system_has_users TO anon, authenticated, service_role;
+
 
 -- ------------------------------------------------------------------------------
 -- 1. Optimize 'public.users' policies
