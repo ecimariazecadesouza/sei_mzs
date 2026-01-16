@@ -198,7 +198,7 @@ const Curriculum: React.FC = () => {
 
       {modal && (
         <div className="fixed inset-0 bg-[#0A1128]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-md shadow-2xl overflow-hidden animate-in zoom-in-95">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className="p-8 border-b border-slate-100 bg-slate-50/50"><h3 className="text-xl font-black text-slate-800">{modal.editingId ? 'Editar' : 'Adicionar'} <span className="text-indigo-600 ml-1">{modal.type === 'formation' ? 'Formação' : modal.type === 'area' ? 'Área' : modal.type === 'subarea' ? 'Subárea' : 'Disciplina'}</span></h3></div>
             <div className="p-8 space-y-6">
               {errorMsg && <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg font-bold">{errorMsg}</div>}

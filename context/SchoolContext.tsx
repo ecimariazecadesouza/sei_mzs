@@ -119,21 +119,36 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const tables = Object.entries(TABLE_MAP);
 
     try {
-      const fetchWithTimeout = async (stateKey: string, tableName: string) => {
-        const fetchPromise = supabase.from(tableName).select('*');
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout na tabela ${tableName}`)), 10000)
-        );
+      const fetchWithTimeout = async (stateKey: string, tableName: string, retries = 3) => {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+          try {
+            const fetchPromise = supabase.from(tableName).select('*');
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error(`TIMEOUT`)), 30000)
+            );
 
-        const { data: resData, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+            const { data: resData, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
-        if (error) {
-          if (error.code === 'PGRST116' || error.message.includes('not found')) {
-            throw new Error(`Tabela '${tableName}' não encontrada.`);
+            if (error) {
+              if (error.code === 'PGRST116' || error.message.includes('not found')) {
+                throw new Error(`NOT_FOUND`);
+              }
+              throw error;
+            }
+            return { stateKey, data: resData };
+          } catch (error: any) {
+            if (error.message === 'TIMEOUT' || error.message?.includes('fetch')) {
+              if (attempt < retries) {
+                console.warn(`Tentativa ${attempt} falhou para ${tableName}. Tentando novamente...`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+                continue;
+              }
+              throw new Error(`Timeout na tabela ${tableName} após ${retries} tentativas.`);
+            }
+            throw error;
           }
-          throw error;
         }
-        return { stateKey, data: resData };
+        throw new Error(`Falha ao carregar tabela ${tableName}`);
       };
 
       const results = await Promise.allSettled(
@@ -141,6 +156,8 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       );
 
       let foundCriticalError = false;
+      let hasConnectionError = false;
+
       results.forEach((result, index) => {
         const [stateKey, tableName] = tables[index];
         if (result.status === 'fulfilled') {
@@ -156,23 +173,28 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           console.group(`Erro de Conexão: ${tableName}`);
           console.error("Mensagem:", error.message);
           console.error("Detalhes:", error.details);
-          console.error("Hint:", error.hint);
           console.groupEnd();
 
-          if (error.message.includes('not found') || error.code === 'PGRST116') {
+          if (error.message.includes('NOT_FOUND')) {
             if (tableName === 'users') {
               setDbError('MISSING_USERS_TABLE');
               foundCriticalError = true;
             }
+          } else if (error.message.includes('Timeout') || error.message.includes('fetch')) {
+            hasConnectionError = true;
           }
         }
       });
 
-      if (!foundCriticalError) {
+      if (hasConnectionError && !foundCriticalError) {
+        setDbError('CONNECTION_TIMEOUT');
+      } else if (!foundCriticalError) {
         setData(newData);
       }
     } catch (error: any) {
+      console.error("Critical Fetch Error:", error);
       if (error.message.includes('users')) setDbError('MISSING_USERS_TABLE');
+      else setDbError('CONNECTION_TIMEOUT');
     } finally {
       setLoading(false);
     }

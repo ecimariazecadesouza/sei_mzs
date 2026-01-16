@@ -72,6 +72,31 @@ const Login: React.FC = () => {
     );
   }
 
+  // TELA DE ERRO DE CONEXÃO / TIMEOUT
+  if (dbError === 'CONNECTION_TIMEOUT') {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-amber-50 via-white to-slate-50">
+        <div className="w-full max-w-md bg-white rounded-[48px] shadow-2xl border border-slate-100 p-12 space-y-10 animate-in zoom-in-95 duration-500 text-center">
+          <div className="w-20 h-20 bg-amber-100 rounded-[28px] flex items-center justify-center mx-auto shadow-2xl shadow-amber-50">
+            <span className="text-3xl">📡</span>
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-3xl font-black text-slate-800 tracking-tighter">Erro de Conexão</h1>
+            <p className="text-slate-500 font-medium leading-relaxed">
+              Não foi possível conectar ao banco de dados. Isso pode ser devido a uma oscilação na internet ou no servidor.
+            </p>
+          </div>
+          <button
+            onClick={() => refreshData()}
+            className="w-full py-5 bg-amber-600 text-white rounded-[24px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-amber-100 hover:bg-amber-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // TELA DE DIAGNÓSTICO SQL (CASO TABELAS NÃO EXISTAM)
   if (dbError === 'MISSING_USERS_TABLE') {
     return (
