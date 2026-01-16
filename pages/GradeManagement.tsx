@@ -175,6 +175,7 @@ const GradeManagement: React.FC = () => {
 
   const [gradeRows, setGradeRows] = useState<GradeRow[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   const [isBatchMode, setIsBatchMode] = useState(false);
   const [batchTargetConfig, setBatchTargetConfig] = useState({ b1: true, b2: false, b3: false, b4: false });
@@ -190,6 +191,7 @@ const GradeManagement: React.FC = () => {
     setSelectedSubjectId('');
     setGradeRows([]);
     setHasUnsavedChanges(false);
+    setSaveError(false);
   }, [selectedYear]);
 
   const filteredClasses = useMemo(() => {
@@ -241,6 +243,7 @@ const GradeManagement: React.FC = () => {
       });
       setGradeRows(rows);
       setHasUnsavedChanges(false);
+      setSaveError(false);
     }
   }, [selectedClassId, selectedSubjectId, data.students, data.grades]);
 
@@ -259,10 +262,12 @@ const GradeManagement: React.FC = () => {
       return newRows;
     });
     setHasUnsavedChanges(true);
+    setSaveError(false);
   }, []);
 
   const handleSave = async () => {
     if (!selectedSubjectId) return;
+    setSaveError(false);
     try {
       const updates: any[] = [];
       for (const row of gradeRows) {
@@ -278,7 +283,10 @@ const GradeManagement: React.FC = () => {
       await refreshData();
       setHasUnsavedChanges(false);
       alert("Diário atualizado com sucesso.");
-    } catch (e) { alert("Erro ao salvar diário."); }
+    } catch (e) {
+      console.error(e);
+      setSaveError(true);
+    }
   };
 
   const handleExportPDF = async () => {
@@ -586,14 +594,14 @@ const GradeManagement: React.FC = () => {
         </div>
       )}
       {hasUnsavedChanges && (
-        <div className="fixed bottom-6 right-6 bg-amber-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-10 duration-300 z-[100] border-4 border-white/20 backdrop-blur-sm">
+        <div className={`fixed bottom-6 right-6 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-10 duration-300 z-[100] border-4 border-white/20 backdrop-blur-sm ${saveError ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'}`}>
           <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
           <div>
-            <p className="font-black text-xs uppercase tracking-widest">Alterações Pendentes</p>
-            <p className="text-[10px] font-bold opacity-90">Não esqueça de salvar o diário.</p>
+            <p className="font-black text-xs uppercase tracking-widest">{saveError ? 'Erro ao Salvar' : 'Alterações Pendentes'}</p>
+            <p className="text-[10px] font-bold opacity-90">{saveError ? 'Verifique sua conexão e tente novamente.' : 'Não esqueça de salvar o diário.'}</p>
           </div>
-          <button onClick={handleSave} className="bg-white text-amber-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-colors shadow-sm">
-            Salvar Agora
+          <button onClick={handleSave} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-colors ${saveError ? 'bg-white text-red-600 hover:bg-red-50' : 'bg-white text-amber-600 hover:bg-amber-50'}`}>
+            {loading ? 'Salvando...' : (saveError ? 'Tentar Novamente' : 'Salvar Agora')}
           </button>
         </div>
       )}

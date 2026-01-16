@@ -16,7 +16,7 @@ CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.users 
-    WHERE id = auth.uid() AND role = 'admin'
+    WHERE id = auth.uid() AND role IN ('admin_ti', 'admin_dir')
   );
 $$ LANGUAGE sql SECURITY DEFINER;
 
