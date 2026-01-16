@@ -480,7 +480,8 @@ const Analytics: React.FC = () => {
                   datasets: [{
                     data: reportData.subStats.map(s => s.avg),
                     backgroundColor: reportData.subStats.map(s => s.avg >= 6 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(244, 63, 94, 0.7)'),
-                    borderRadius: 6
+                    borderRadius: 6,
+                    barThickness: 40
                   }]
                 }}
                 options={barOptions() as any}
