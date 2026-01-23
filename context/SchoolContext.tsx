@@ -6,6 +6,7 @@ import {
   Assignment, Grade, FormationType, KnowledgeArea, SubArea, SchoolSettings, AppUser, UserRole, AcademicYearConfig
 } from '../types';
 import { can, ResourceType } from '../lib/permissions';
+import { exportAcademicYear } from '../lib/exportUtils';
 
 const DEFAULT_SCHOOL_LOGO = 'https://i.postimg.cc/1tVz9RY5/Logo-da-Escola-v5-ECIT.png';
 const DEFAULT_SYSTEM_LOGO = 'https://i.postimg.cc/Dwznvy86/SEI-V02.png';
@@ -83,6 +84,7 @@ export interface SchoolContextType {
   deleteItem: (type: keyof SchoolData, id: string) => Promise<void>;
   updateSettings: (s: Partial<SchoolSettings>) => Promise<void>;
   updateAcademicYearConfig: (config: AcademicYearConfig) => Promise<void>;
+  exportYear: (year: string) => void;
   addUser: (u: Omit<AppUser, 'id'>) => Promise<void>;
   createFirstAdmin: (u: { name: string, email: string }) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -467,13 +469,22 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setData(prev => ({ ...prev, [type]: (prev[type] as any[]).filter(i => i.id !== id) }));
   };
 
+  const exportYear = (year: string) => {
+    if (!currentUser || !can(currentUser.role, 'update', 'settings')) {
+      alert('Acesso Negado: Você não tem permissão para exportar dados.');
+      return;
+    }
+    const academicConfig = data.academicYears.find(y => y.year === year);
+    exportAcademicYear({ year, data, academicConfig });
+  };
+
   const value = useMemo(() => ({
     data, loading, dbError, hasUsers, currentUser, login, logout, updateProfile, fetchData,
     addStudent, updateStudent, addTeacher, updateTeacher,
     addSubject, updateSubject, addClass, updateClass,
     addFormation, updateFormation, addKnowledgeArea, updateKnowledgeArea,
     addSubArea, updateSubArea, assignTeacher, updateGrade, bulkUpdateGrades,
-    deleteItem, updateSettings, updateAcademicYearConfig, addUser, createFirstAdmin,
+    deleteItem, updateSettings, updateAcademicYearConfig, exportYear, addUser, createFirstAdmin,
     updatePassword, requestPasswordReset, isSettingPassword, setIsSettingPassword,
     refreshData: fetchData
   }), [data, loading, dbError, currentUser, isSettingPassword]);

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- RLS OPTIMIZATION SCRIPT (CORRIGIDO)
+-- RLS OPTIMIZATION SCRIPT (FINAL REVISION)
 -- ==============================================================================
 -- This script optimizes Row Level Security policies to resolve performance 
 -- warnings described in your database linter.
@@ -13,12 +13,16 @@
 -- ------------------------------------------------------------------------------
 -- Creating the function first so it can be used in the policies below.
 CREATE OR REPLACE FUNCTION public.is_admin() 
-RETURNS boolean AS $$
+RETURNS boolean 
+LANGUAGE sql 
+SECURITY DEFINER
+SET search_path = public
+AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.users 
     WHERE id = auth.uid() AND role IN ('admin_ti', 'admin_dir')
   );
-$$ LANGUAGE sql SECURITY DEFINER;
+$$;
 
 -- 0.1 Helper Function: system_has_users()
 -- Allows frontend to check if setup is needed without exposing user data
@@ -26,6 +30,7 @@ CREATE OR REPLACE FUNCTION public.system_has_users()
 RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
+SET search_path = public
 AS $$
   SELECT EXISTS (SELECT 1 FROM public.users);
 $$;
@@ -89,6 +94,10 @@ DROP POLICY IF EXISTS "Leitura total" ON public.academic_years;
 DROP POLICY IF EXISTS "Write academic_years" ON public.academic_years;
 DROP POLICY IF EXISTS "Unified Select Academic Years" ON public.academic_years;
 DROP POLICY IF EXISTS "Admin Write Academic Years" ON public.academic_years;
+-- Drops for split policies if re-run
+DROP POLICY IF EXISTS "Admin Insert Academic Years" ON public.academic_years;
+DROP POLICY IF EXISTS "Admin Update Academic Years" ON public.academic_years;
+DROP POLICY IF EXISTS "Admin Delete Academic Years" ON public.academic_years;
 
 
 -- SELECT: Consolidate multiple policies
@@ -98,12 +107,15 @@ USING (
   true
 );
 
--- INSERT/UPDATE/DELETE: Restore "Write academic_years" logic
-CREATE POLICY "Admin Write Academic Years" ON public.academic_years
-FOR ALL
-USING (
-  (public.is_admin())
-);
+-- WRITE (Split to avoid 'Multiple Permissive Policies' warning with SELECT)
+CREATE POLICY "Admin Insert Academic Years" ON public.academic_years
+FOR INSERT WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admin Update Academic Years" ON public.academic_years
+FOR UPDATE USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admin Delete Academic Years" ON public.academic_years
+FOR DELETE USING (public.is_admin());
 
 
 -- ------------------------------------------------------------------------------
@@ -114,6 +126,10 @@ DROP POLICY IF EXISTS "Leitura total" ON public.settings;
 DROP POLICY IF EXISTS "Write settings" ON public.settings;
 DROP POLICY IF EXISTS "Unified Select Settings" ON public.settings;
 DROP POLICY IF EXISTS "Admin Write Settings" ON public.settings;
+-- Drops for split policies if re-run
+DROP POLICY IF EXISTS "Admin Insert Settings" ON public.settings;
+DROP POLICY IF EXISTS "Admin Update Settings" ON public.settings;
+DROP POLICY IF EXISTS "Admin Delete Settings" ON public.settings;
 
 
 -- SELECT: Consolidate "Leitura total" and "Write settings"
@@ -123,9 +139,12 @@ USING (
   true
 );
 
--- WRITE (INSERT/UPDATE): Admin only
-CREATE POLICY "Admin Write Settings" ON public.settings
-FOR ALL
-USING (
-  (public.is_admin())
-);
+-- WRITE (Split to avoid 'Multiple Permissive Policies' warning with SELECT)
+CREATE POLICY "Admin Insert Settings" ON public.settings
+FOR INSERT WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admin Update Settings" ON public.settings
+FOR UPDATE USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admin Delete Settings" ON public.settings
+FOR DELETE USING (public.is_admin());

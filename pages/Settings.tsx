@@ -3,9 +3,10 @@ import { useSchool, formatImageUrl } from '../context/SchoolContext';
 import { AcademicYearConfig } from '../types';
 import { can } from '../lib/permissions';
 import MaskedDateInput from '../components/common/MaskedDateInput';
+import { Download } from 'lucide-react';
 
 const Settings: React.FC = () => {
-  const { data, updateSettings, currentUser, updateProfile, updateAcademicYearConfig } = useSchool();
+  const { data, updateSettings, currentUser, updateProfile, updateAcademicYearConfig, exportYear } = useSchool();
   const { schoolLogo, systemLogo } = data.settings;
   const [showUrlInput, setShowUrlInput] = useState<{ school: boolean, system: boolean }>({ school: false, system: false });
   const [tempUrl, setTempUrl] = useState('');
@@ -269,14 +270,24 @@ const Settings: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h4 className="text-lg font-black text-slate-700">Ano Letivo {year}</h4>
                   {currentUser && can(currentUser.role, 'update', 'settings') && (
-                    <button
-                      type="button"
-                      disabled={savingYear === year}
-                      onClick={() => saveCalendarByYear(year)}
-                      className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50"
-                    >
-                      {savingYear === year ? 'Salvando...' : `Salvar ${year}`}
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => exportYear(year)}
+                        className="px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2"
+                      >
+                        <Download size={14} />
+                        Exportar {year}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={savingYear === year}
+                        onClick={() => saveCalendarByYear(year)}
+                        className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {savingYear === year ? 'Salvando...' : `Salvar ${year}`}
+                      </button>
+                    </div>
                   )}
                 </div>
 
