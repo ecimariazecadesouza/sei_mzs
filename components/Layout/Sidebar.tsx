@@ -90,8 +90,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                             )}
                         </motion.div>
                         <div className="overflow-hidden">
-                            <h1 className="text-[11px] font-black tracking-tight text-[#0A1128] leading-tight uppercase">SEI - Sistema Escolar</h1>
-                            <p className="text-[8px] text-slate-400 mt-1 uppercase tracking-widest font-bold leading-tight">Gestão Inteligente</p>
+                            <h1 className="text-[10px] font-black tracking-tighter text-[#0A1128] leading-tight uppercase whitespace-nowrap">SEI - Sistema Escolar Integrado</h1>
+                            <p className="text-[8px] text-slate-400 mt-0.5 uppercase tracking-widest font-bold leading-tight">Gestão Inteligente</p>
                         </div>
                     </div>
                 </div>

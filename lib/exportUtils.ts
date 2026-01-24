@@ -187,16 +187,23 @@ const createGradesSheet = (
                 }
             }
 
-            // MT - Média Total (após recuperação, se aplicável)
-            // Por enquanto, deixamos vazio pois não temos dados de RF lançados
-            const mt = '-';
+            // MF - Média Final
+            // Se houver nota de recuperação (Termo 5), recalcula a média
+            const rfGrade = termGrades[5] ?? null;
+            let mf = mg;
+
+            if (mg !== null && mg < 6.0 && rfGrade !== null) {
+                // Cálculo da Média Final com Recuperação
+                // Considerando a regra (MG + RF) / 2 para atingir 6.0
+                mf = (mg + rfGrade) / 2;
+            }
 
             // SITUAÇÃO
             let situacao = 'Pendente';
-            if (mg !== null) {
-                if (mg >= 6.0) {
+            if (mf !== null) {
+                if (mf >= 6.0) {
                     situacao = 'Aprovado';
-                } else if (mg < 3.0) {
+                } else if (mf < 3.0) {
                     situacao = 'Reprovado';
                 } else {
                     situacao = 'Recuperação';
@@ -205,14 +212,14 @@ const createGradesSheet = (
 
             // DESEMPENHO
             let desempenho = '-';
-            if (mg !== null) {
-                if (mg >= 9.0) {
+            if (mf !== null) {
+                if (mf >= 9.0) {
                     desempenho = 'Excelente';
-                } else if (mg >= 8.0) {
+                } else if (mf >= 8.0) {
                     desempenho = 'Ótimo';
-                } else if (mg >= 7.0) {
+                } else if (mf >= 7.0) {
                     desempenho = 'Bom';
-                } else if (mg >= 6.0) {
+                } else if (mf >= 6.0) {
                     desempenho = 'Satisfatório';
                 } else {
                     desempenho = 'Insuficiente';
@@ -232,7 +239,7 @@ const createGradesSheet = (
                 'MG': mg !== null ? mg.toFixed(1) : '-',
                 'PRECISA': precisa > 0 ? precisa.toFixed(1) : '-',
                 'RF': typeof rf === 'number' ? rf.toFixed(1) : rf,
-                'MT': mt,
+                'MF': mf !== null ? mf.toFixed(1) : '-',
                 'SITUAÇÃO': situacao,
                 'DESEMPENHO': desempenho,
             });
