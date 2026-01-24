@@ -120,7 +120,7 @@ const createStudentsSheet = (students: Student[], classes: Class[], year: string
 };
 
 /**
- * Cria a aba de notas
+ * Cria a aba de notas com cálculos completos
  */
 const createGradesSheet = (
     grades: Grade[],
@@ -157,23 +157,84 @@ const createGradesSheet = (
             const b3 = termGrades[3] ?? null;
             const b4 = termGrades[4] ?? null;
 
-            // Calcular média anual
+            // CÁLCULOS
+            // PTS - Pontos totais (soma dos 4 bimestres)
             const validGrades = [b1, b2, b3, b4].filter(g => g !== null) as number[];
-            const average = validGrades.length > 0
-                ? validGrades.reduce((sum, g) => sum + g, 0) / validGrades.length
+            const pts = validGrades.length > 0
+                ? validGrades.reduce((sum, g) => sum + g, 0)
                 : null;
+
+            // MG - Média Geral (PTS ÷ 4)
+            const mg = pts !== null && validGrades.length === 4
+                ? pts / 4
+                : null;
+
+            // PRECISA - Pontos necessários para aprovação (24 pontos = média 6.0)
+            const precisa = pts !== null && pts < 24
+                ? 24 - pts
+                : 0;
+
+            // RF - Recuperação Final (nota necessária)
+            // Fórmula: Para média final 6.0 → (MG + RF) / 2 = 6.0 → RF = 12 - MG
+            let rf: number | string = '-';
+            if (mg !== null) {
+                if (mg < 3.0) {
+                    rf = '-'; // Reprovado direto, não faz RF
+                } else if (mg < 6.0) {
+                    rf = 12 - mg; // Nota necessária na RF
+                } else {
+                    rf = '-'; // Aprovado, não precisa de RF
+                }
+            }
+
+            // MT - Média Total (após recuperação, se aplicável)
+            // Por enquanto, deixamos vazio pois não temos dados de RF lançados
+            const mt = '-';
+
+            // SITUAÇÃO
+            let situacao = 'Pendente';
+            if (mg !== null) {
+                if (mg >= 6.0) {
+                    situacao = 'Aprovado';
+                } else if (mg < 3.0) {
+                    situacao = 'Reprovado';
+                } else {
+                    situacao = 'Recuperação';
+                }
+            }
+
+            // DESEMPENHO
+            let desempenho = '-';
+            if (mg !== null) {
+                if (mg >= 9.0) {
+                    desempenho = 'Excelente';
+                } else if (mg >= 8.0) {
+                    desempenho = 'Ótimo';
+                } else if (mg >= 7.0) {
+                    desempenho = 'Bom';
+                } else if (mg >= 6.0) {
+                    desempenho = 'Satisfatório';
+                } else {
+                    desempenho = 'Insuficiente';
+                }
+            }
 
             gradesData.push({
                 'Matrícula': student.registrationNumber,
                 'Aluno': student.name,
                 'Turma': studentClass?.name || 'N/A',
                 'Disciplina': subject?.name || 'N/A',
-                '1º Bim': b1 !== null ? b1.toFixed(1) : '-',
-                '2º Bim': b2 !== null ? b2.toFixed(1) : '-',
-                '3º Bim': b3 !== null ? b3.toFixed(1) : '-',
-                '4º Bim': b4 !== null ? b4.toFixed(1) : '-',
-                'Média Anual': average !== null ? average.toFixed(1) : '-',
-                'Situação': average !== null ? (average >= 6.0 ? 'Aprovado' : 'Reprovado') : 'Pendente',
+                '1º BIM': b1 !== null ? b1.toFixed(1) : '-',
+                '2º BIM': b2 !== null ? b2.toFixed(1) : '-',
+                '3º BIM': b3 !== null ? b3.toFixed(1) : '-',
+                '4º BIM': b4 !== null ? b4.toFixed(1) : '-',
+                'PTS': pts !== null ? pts.toFixed(1) : '-',
+                'MG': mg !== null ? mg.toFixed(1) : '-',
+                'PRECISA': precisa > 0 ? precisa.toFixed(1) : '-',
+                'RF': typeof rf === 'number' ? rf.toFixed(1) : rf,
+                'MT': mt,
+                'SITUAÇÃO': situacao,
+                'DESEMPENHO': desempenho,
             });
         });
     });

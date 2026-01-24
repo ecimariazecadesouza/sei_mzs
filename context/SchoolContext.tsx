@@ -85,6 +85,7 @@ export interface SchoolContextType {
   updateSettings: (s: Partial<SchoolSettings>) => Promise<void>;
   updateAcademicYearConfig: (config: AcademicYearConfig) => Promise<void>;
   exportYear: (year: string) => void;
+  cleanEnrollments: (year: string) => Promise<void>;
   addUser: (u: Omit<AppUser, 'id'>) => Promise<void>;
   createFirstAdmin: (u: { name: string, email: string }) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -478,13 +479,70 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     exportAcademicYear({ year, data, academicConfig });
   };
 
+  const cleanEnrollments = async (year: string) => {
+    if (!currentUser || !can(currentUser.role, 'update', 'settings')) {
+      alert('Acesso Negado: Apenas Administradores TI podem limpar matrículas.');
+      return;
+    }
+
+    try {
+      // 1. Exportar automaticamente antes de excluir
+      console.log('📦 Gerando backup automático...');
+      const academicConfig = data.academicYears.find(y => y.year === year);
+      exportAcademicYear({ year, data, academicConfig });
+
+      // 2. Buscar todos os alunos do ano
+      const studentsInYear = data.students.filter(s =>
+        data.classes.some(c => c.id === s.classId && c.year === year)
+      );
+
+      if (studentsInYear.length === 0) {
+        alert('Nenhum aluno encontrado para este ano letivo.');
+        return;
+      }
+
+      const studentIds = studentsInYear.map(s => s.id);
+
+      // 3. Excluir notas dos alunos
+      console.log(`🗑️ Excluindo notas de ${studentIds.length} alunos...`);
+      const { error: gradesError } = await supabase
+        .from('grades')
+        .delete()
+        .in('student_id', studentIds);
+
+      if (gradesError) throw gradesError;
+
+      // 4. Excluir alunos
+      console.log(`🗑️ Excluindo ${studentIds.length} alunos...`);
+      const { error: studentsError } = await supabase
+        .from('students')
+        .delete()
+        .in('id', studentIds);
+
+      if (studentsError) throw studentsError;
+
+      // 5. Atualizar estado local
+      setData(prev => ({
+        ...prev,
+        students: prev.students.filter(s => !studentIds.includes(s.id)),
+        grades: prev.grades.filter(g => !studentIds.includes(g.studentId)),
+      }));
+
+      alert(`✅ Limpeza concluída!\n\n${studentIds.length} alunos e suas notas foram removidos do ano ${year}.\n\nUm backup foi gerado automaticamente.`);
+    } catch (error: any) {
+      console.error('❌ Erro ao limpar matrículas:', error);
+      alert(`Erro ao limpar matrículas: ${error.message || 'Erro desconhecido'}`);
+      throw error;
+    }
+  };
+
   const value = useMemo(() => ({
     data, loading, dbError, hasUsers, currentUser, login, logout, updateProfile, fetchData,
     addStudent, updateStudent, addTeacher, updateTeacher,
     addSubject, updateSubject, addClass, updateClass,
     addFormation, updateFormation, addKnowledgeArea, updateKnowledgeArea,
     addSubArea, updateSubArea, assignTeacher, updateGrade, bulkUpdateGrades,
-    deleteItem, updateSettings, updateAcademicYearConfig, exportYear, addUser, createFirstAdmin,
+    deleteItem, updateSettings, updateAcademicYearConfig, exportYear, cleanEnrollments, addUser, createFirstAdmin,
     updatePassword, requestPasswordReset, isSettingPassword, setIsSettingPassword,
     refreshData: fetchData
   }), [data, loading, dbError, currentUser, isSettingPassword]);

@@ -3,10 +3,10 @@ import { useSchool, formatImageUrl } from '../context/SchoolContext';
 import { AcademicYearConfig } from '../types';
 import { can } from '../lib/permissions';
 import MaskedDateInput from '../components/common/MaskedDateInput';
-import { Download } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 
 const Settings: React.FC = () => {
-  const { data, updateSettings, currentUser, updateProfile, updateAcademicYearConfig, exportYear } = useSchool();
+  const { data, updateSettings, currentUser, updateProfile, updateAcademicYearConfig, exportYear, cleanEnrollments } = useSchool();
   const { schoolLogo, systemLogo } = data.settings;
   const [showUrlInput, setShowUrlInput] = useState<{ school: boolean, system: boolean }>({ school: false, system: false });
   const [tempUrl, setTempUrl] = useState('');
@@ -61,6 +61,12 @@ const Settings: React.FC = () => {
   const [localCalendar, setLocalCalendar] = useState<AcademicYearConfig[]>([]);
   const [savingYear, setSavingYear] = useState<string | null>(null);
 
+  // Modal de confirmação para limpeza de matrículas
+  const [showCleanModal, setShowCleanModal] = useState(false);
+  const [yearToClean, setYearToClean] = useState<string | null>(null);
+  const [confirmChecked, setConfirmChecked] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+
   useEffect(() => {
     if (data.academicYears) setLocalCalendar(data.academicYears);
   }, [data.academicYears]);
@@ -86,6 +92,21 @@ const Settings: React.FC = () => {
       alert(`Erro ao salvar: ${e.message || 'Verifique sua conexão'}`);
     } finally {
       setSavingYear(null);
+    }
+  };
+
+  const handleCleanEnrollments = async () => {
+    if (!yearToClean || !confirmChecked) return;
+    setIsCleaning(true);
+    try {
+      await cleanEnrollments(yearToClean);
+      setShowCleanModal(false);
+      setYearToClean(null);
+      setConfirmChecked(false);
+    } catch (e) {
+      // Erro já tratado no contexto
+    } finally {
+      setIsCleaning(false);
     }
   };
 
@@ -281,6 +302,17 @@ const Settings: React.FC = () => {
                       </button>
                       <button
                         type="button"
+                        onClick={() => {
+                          setYearToClean(year);
+                          setShowCleanModal(true);
+                        }}
+                        className="px-6 py-2 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-red-700 transition-all active:scale-95 flex items-center gap-2"
+                      >
+                        <Trash2 size={14} />
+                        Limpar Matrículas
+                      </button>
+                      <button
+                        type="button"
                         disabled={savingYear === year}
                         onClick={() => saveCalendarByYear(year)}
                         className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50"
@@ -321,6 +353,83 @@ const Settings: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Modal de Confirmação para Limpeza de Matrículas */}
+      {showCleanModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[40px] p-10 max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center">
+                <Trash2 size={32} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-slate-800">Limpar Matrículas do Ano {yearToClean}</h3>
+                <p className="text-sm text-slate-500 font-medium">Esta ação é irreversível</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-2xl">
+                <p className="text-sm font-bold text-amber-900 mb-2">⚠️ ATENÇÃO</p>
+                <p className="text-sm text-amber-800">
+                  Esta operação irá <strong>excluir permanentemente</strong> todos os alunos matriculados
+                  e suas respectivas notas do ano letivo <strong>{yearToClean}</strong>.
+                </p>
+              </div>
+
+              <div className="p-6 bg-blue-50 border-2 border-blue-200 rounded-2xl">
+                <p className="text-sm font-bold text-blue-900 mb-2">📦 Backup Automático</p>
+                <p className="text-sm text-blue-800">
+                  Um arquivo Excel com todos os dados será gerado automaticamente antes da exclusão.
+                </p>
+              </div>
+
+              <div className="p-6 bg-emerald-50 border-2 border-emerald-200 rounded-2xl">
+                <p className="text-sm font-bold text-emerald-900 mb-2">✅ O que será mantido</p>
+                <ul className="text-sm text-emerald-800 list-disc list-inside space-y-1">
+                  <li>Turmas e suas configurações</li>
+                  <li>Disciplinas do currículo</li>
+                  <li>Professores e atribuições</li>
+                  <li>Calendário acadêmico</li>
+                </ul>
+              </div>
+
+              <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl cursor-pointer hover:bg-slate-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={confirmChecked}
+                  onChange={(e) => setConfirmChecked(e.target.checked)}
+                  className="w-5 h-5 rounded border-2 border-slate-300"
+                />
+                <span className="text-sm font-bold text-slate-700">
+                  Entendo que esta ação é irreversível e um backup será gerado
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowCleanModal(false);
+                  setYearToClean(null);
+                  setConfirmChecked(false);
+                }}
+                disabled={isCleaning}
+                className="flex-1 px-6 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-300 transition-all active:scale-95 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCleanEnrollments}
+                disabled={!confirmChecked || isCleaning}
+                className="flex-1 px-6 py-4 bg-red-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCleaning ? 'Limpando...' : 'Confirmar Limpeza'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
