@@ -121,7 +121,7 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const fetchData = useCallback(async (silent: boolean = false) => {
     if (!silent) setLoading(true);
     setDbError(null);
-    const newData: any = { ...data };
+    const newData: any = {};
     const tables = Object.entries(TABLE_MAP);
 
     try {
@@ -205,7 +205,7 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (hasConnectionError && !foundCriticalError) {
         setDbError('CONNECTION_TIMEOUT');
       } else if (!foundCriticalError) {
-        setData(newData);
+        setData(prev => ({ ...prev, ...newData }));
       }
     } catch (error: any) {
       console.error("Critical Fetch Error:", error);
@@ -215,7 +215,7 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (!silent) setLoading(false);
       setIsInitialLoad(false);
     }
-  }, [data]);
+  }, []);
 
   useEffect(() => {
     // Verificação proativa de link de convite ou recuperação na URL

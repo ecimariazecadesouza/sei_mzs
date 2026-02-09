@@ -564,6 +564,8 @@ const ClassCouncil: React.FC = () => {
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Formação</span>
               <select
+                title="Formação"
+                aria-label="Selecionar Formação"
                 value={filters.type}
                 onChange={e => setFilters({ ...filters, type: e.target.value, areaId: 'all', subAreaIds: [] })}
                 className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all text-slate-700"
@@ -575,6 +577,8 @@ const ClassCouncil: React.FC = () => {
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Área de Conhecimento</span>
               <select
+                title="Área de Conhecimento"
+                aria-label="Selecionar Área de Conhecimento"
                 value={filters.areaId}
                 onChange={e => setFilters({ ...filters, areaId: e.target.value, subAreaIds: [] })}
                 className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all text-slate-700"
