@@ -52,6 +52,8 @@ const ClassCouncil: React.FC = () => {
     turmaId: '',
     status: 'Cursando',
     type: 'all',
+    areaId: 'all',
+    subAreaId: 'all',
     minHigh: '',
     minLow: '',
     referenceTerm: '4' // 1, 2, 3, ou 4 (Padrão 4 para cálculo anual completo)
@@ -77,6 +79,19 @@ const ClassCouncil: React.FC = () => {
     data.classes.filter(c => c.year === filters.year).sort(sortClasses)
     , [data.classes, filters.year]);
 
+  const filteredKnowledgeAreas = useMemo(() => {
+    if (filters.type === 'all') return data.knowledgeAreas;
+    return data.knowledgeAreas.filter(a => a.formationTypeId === filters.type);
+  }, [data.knowledgeAreas, filters.type]);
+
+  const filteredSubAreas = useMemo(() => {
+    if (filters.areaId === 'all') {
+      const areaIds = new Set(filteredKnowledgeAreas.map(a => a.id));
+      return data.subAreas.filter(s => areaIds.has(s.knowledgeAreaId));
+    }
+    return data.subAreas.filter(s => s.knowledgeAreaId === filters.areaId);
+  }, [data.subAreas, filteredKnowledgeAreas, filters.areaId]);
+
   const disciplinasTurma = useMemo(() => {
     if (!turmaAtual) return [];
     const ids = (turmaAtual.subjectIds || []).map(id => String(id));
@@ -91,8 +106,19 @@ const ClassCouncil: React.FC = () => {
       });
     }
 
+    if (filters.areaId !== 'all') {
+      subjects = subjects.filter(s => {
+        const subArea = data.subAreas.find(sa => String(sa.id) === String(s.subAreaId));
+        return subArea?.knowledgeAreaId === filters.areaId;
+      });
+    }
+
+    if (filters.subAreaId !== 'all') {
+      subjects = subjects.filter(s => String(s.subAreaId) === filters.subAreaId);
+    }
+
     return subjects.sort(sortSubjects);
-  }, [turmaAtual, data.subjects, data.subAreas, data.knowledgeAreas, filters.type]);
+  }, [turmaAtual, data.subjects, data.subAreas, data.knowledgeAreas, filters.type, filters.areaId, filters.subAreaId]);
 
   const rows = useMemo(() => {
     if (!filters.turmaId) return [];
@@ -523,11 +549,39 @@ const ClassCouncil: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Formação</span>
-              <select value={filters.type} onChange={e => setFilters({ ...filters, type: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all">
+              <select
+                value={filters.type}
+                onChange={e => setFilters({ ...filters, type: e.target.value, areaId: 'all', subAreaId: 'all' })}
+                className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all text-slate-700"
+              >
                 <option value="all">Todas as formações</option>
                 {data.formations.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Área de Conhecimento</span>
+              <select
+                value={filters.areaId}
+                onChange={e => setFilters({ ...filters, areaId: e.target.value, subAreaId: 'all' })}
+                className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all text-slate-700"
+              >
+                <option value="all">Todas as áreas</option>
+                {filteredKnowledgeAreas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subárea</span>
+              <select
+                value={filters.subAreaId}
+                onChange={e => setFilters({ ...filters, subAreaId: e.target.value })}
+                className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all text-slate-700"
+              >
+                <option value="all">Todas as subáreas</option>
+                {filteredSubAreas.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mínimo Médias ≥ 5</span>
               <input type="number" value={filters.minHigh} onChange={e => setFilters({ ...filters, minHigh: e.target.value })} placeholder="Qtd..." className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white" />

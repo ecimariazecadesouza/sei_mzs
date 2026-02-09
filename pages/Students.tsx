@@ -4,6 +4,7 @@ import { useSchool } from '../context/SchoolContext';
 import { Student } from '../types';
 import { can } from '../lib/permissions';
 import { Pencil, Trash2 } from 'lucide-react';
+import { sortClasses } from '../lib/sorting';
 
 const Students: React.FC = () => {
   const { data, addStudent, updateStudent, deleteItem, currentUser } = useSchool();
@@ -90,7 +91,7 @@ const Students: React.FC = () => {
   const classesForForm = useMemo(() => {
     return data.classes
       .filter(c => c.year === formYear)
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      .sort(sortClasses);
   }, [data.classes, formYear]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -199,9 +200,12 @@ const Students: React.FC = () => {
               className="bg-transparent outline-none text-xs font-black text-slate-600 uppercase tracking-wide cursor-pointer hover:text-indigo-600 transition-colors max-w-[120px]"
             >
               <option value="all">Todas as Turmas</option>
-              {data.classes.filter(c => c.year === filterYear).map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {data.classes
+                .filter(c => c.year === filterYear)
+                .sort(sortClasses)
+                .map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
             </select>
             <div className="w-px h-6 bg-slate-200"></div>
             <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="bg-transparent outline-none text-xs font-black text-slate-600 uppercase tracking-wide cursor-pointer hover:text-indigo-600 transition-colors pr-2">
