@@ -122,7 +122,7 @@ const Teachers: React.FC = () => {
 
       setSelectedSubjects([]);
       setSelectedClasses([]);
-      await refreshData();
+      await refreshData(true);
 
       let msg = `${successCount} vínculos criados com sucesso!`;
       if (skipCount > 0) msg += ` (${skipCount} já existiam e foram ignorados).`;
@@ -147,16 +147,28 @@ const Teachers: React.FC = () => {
     );
   };
 
-  if (loading) return <div className="p-20 text-center animate-pulse text-slate-400 font-black uppercase tracking-widest">Sincronizando Corpo Docente...</div>;
+  if (loading && data.teachers.length === 0) return <div className="p-20 text-center animate-pulse text-slate-400 font-black uppercase tracking-widest">Sincronizando Corpo Docente...</div>;
 
   return (
     <div className="space-y-10 pb-20 animate-in fade-in duration-700">
 
       {/* HEADER E FILTRO GLOBAL */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-[#0A1128] tracking-tight">Docentes</h1>
-          <p className="text-slate-500 font-medium">Gestão de professores e atribuição de carga horária.</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-4xl font-black text-[#0A1128] tracking-tight">Docentes</h1>
+            <p className="text-slate-500 font-medium">Gestão de professores e atribuição de carga horária.</p>
+          </div>
+          {loading && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full animate-pulse shadow-sm border border-indigo-100 h-fit mt-1">
+              <div className="flex gap-1">
+                <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce" />
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-tighter">Sincronizando</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm">

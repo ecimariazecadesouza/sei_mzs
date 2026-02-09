@@ -63,7 +63,7 @@ export interface SchoolContextType {
   login: (email: string, password?: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateProfile: (name: string) => Promise<void>;
-  fetchData: () => Promise<void>;
+  fetchData: (silent?: boolean) => Promise<void>;
   addStudent: (s: any) => Promise<void>;
   updateStudent: (id: string, s: any) => Promise<void>;
   addTeacher: (t: any) => Promise<void>;
@@ -92,7 +92,7 @@ export interface SchoolContextType {
   requestPasswordReset: (email: string) => Promise<void>;
   isSettingPassword: boolean;
   setIsSettingPassword: (v: boolean) => void;
-  refreshData: () => Promise<void>;
+  refreshData: (silent?: boolean) => Promise<void>;
 }
 
 const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
@@ -116,9 +116,10 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [hasUsers, setHasUsers] = useState(true); // Default to true to prevent flickering setup screen
   const [dbError, setDbError] = useState<string | null>(null);
   const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (silent: boolean = false) => {
+    if (!silent) setLoading(true);
     setDbError(null);
     const newData: any = { ...data };
     const tables = Object.entries(TABLE_MAP);
@@ -211,9 +212,10 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (error.message.includes('users')) setDbError('MISSING_USERS_TABLE');
       else setDbError('CONNECTION_TIMEOUT');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+      setIsInitialLoad(false);
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     // Verificação proativa de link de convite ou recuperação na URL
@@ -445,7 +447,7 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
     await supabase.from('grades').upsert(toSnake(g), { onConflict: 'student_id, subject_id, term' });
-    await fetchData();
+    await fetchData(true);
   };
 
   const bulkUpdateGrades = async (grades: any[]) => {
@@ -454,7 +456,7 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
     await supabase.from('grades').upsert(grades.map(toSnake), { onConflict: 'student_id, subject_id, term' });
-    await fetchData();
+    await fetchData(true);
   };
 
   const deleteItem = async (type: keyof SchoolData, id: string) => {
@@ -544,8 +546,9 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     addSubArea, updateSubArea, assignTeacher, updateGrade, bulkUpdateGrades,
     deleteItem, updateSettings, updateAcademicYearConfig, exportYear, cleanEnrollments, addUser, createFirstAdmin,
     updatePassword, requestPasswordReset, isSettingPassword, setIsSettingPassword,
+    isInitialLoad,
     refreshData: fetchData
-  }), [data, loading, dbError, currentUser, isSettingPassword]);
+  }), [data, loading, dbError, currentUser, isSettingPassword, isInitialLoad]);
 
   return <SchoolContext.Provider value={value}>{children}</SchoolContext.Provider>;
 };
