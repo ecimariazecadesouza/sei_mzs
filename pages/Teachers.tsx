@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { Teacher, Assignment, Class, Subject } from '../types';
-import { sortSubjects, sortClasses } from '../lib/sorting';
+import { sortSubjects, sortClasses, sortTeachers } from '../lib/sorting';
 
 const Icon = ({ name, className = "w-5 h-5" }: { name: string, className?: string }) => {
   const icons: Record<string, React.ReactNode> = {
@@ -60,8 +60,12 @@ const Teachers: React.FC = () => {
     return data.assignments.filter(ass => {
       const cls = data.classes.find(c => String(c.id) === String(ass.classId));
       return cls?.year === filterYear;
+    }).sort((a, b) => {
+      const tA = data.teachers.find(t => String(t.id) === String(a.teacherId));
+      const tB = data.teachers.find(t => String(t.id) === String(b.teacherId));
+      return (tA?.name || '').localeCompare(tB?.name || '');
     });
-  }, [data.assignments, data.classes, filterYear]);
+  }, [data.assignments, data.classes, data.teachers, filterYear]);
 
   // Handlers
   const handleAddTeacher = async (e: React.FormEvent) => {
@@ -158,6 +162,8 @@ const Teachers: React.FC = () => {
         <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm">
           <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest mr-4">Ano Letivo</span>
           <select
+            title="Ano Letivo"
+            aria-label="Selecionar Ano Letivo"
             value={filterYear}
             onChange={e => {
               setFilterYear(e.target.value);
@@ -224,13 +230,15 @@ const Teachers: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professor</label>
                 <select
+                  title="Selecionar Professor"
+                  aria-label="Selecionar Professor para Atribuição"
                   required
                   value={selectedTeacher}
                   onChange={e => setSelectedTeacher(e.target.value)}
                   className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none bg-white font-bold text-slate-700 focus:border-purple-200"
                 >
                   <option value="">SELECIONE...</option>
-                  {data.teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {[...data.teachers].sort(sortTeachers).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
 
@@ -302,7 +310,7 @@ const Teachers: React.FC = () => {
               <span className="bg-slate-200 px-3 py-1 rounded-full text-slate-600">{data.teachers.length} Cadastrados</span>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {data.teachers.map(teacher => (
+              {[...data.teachers].sort(sortTeachers).map(teacher => (
                 <div key={teacher.id} className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-200 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-indigo-50 group-hover:text-indigo-400 transition-colors">
@@ -314,6 +322,8 @@ const Teachers: React.FC = () => {
                     </div>
                   </div>
                   <button
+                    title="Excluir Professor"
+                    aria-label={`Excluir professor ${teacher.name}`}
                     onClick={() => setDeleteConfirm({ id: teacher.id, type: 'teachers', label: teacher.name })}
                     className="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                   >

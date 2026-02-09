@@ -55,3 +55,10 @@ export const sortSubjects = (a: { name: string }, b: { name: string }) => {
 export const sortClasses = (a: { name: string }, b: { name: string }) => {
     return a.name.localeCompare(b.name, 'pt-BR', { numeric: true });
 };
+
+/**
+ * Função de comparação para ordenar professores alfabeticamente.
+ */
+export const sortTeachers = (a: { name: string }, b: { name: string }) => {
+    return a.name.localeCompare(b.name, 'pt-BR');
+};
