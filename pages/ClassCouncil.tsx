@@ -53,7 +53,7 @@ const ClassCouncil: React.FC = () => {
     status: 'Cursando',
     type: 'all',
     areaId: 'all',
-    subAreaId: 'all',
+    subAreaIds: [] as string[],
     minHigh: '',
     minLow: '',
     referenceTerm: '4' // 1, 2, 3, ou 4 (Padrão 4 para cálculo anual completo)
@@ -113,12 +113,12 @@ const ClassCouncil: React.FC = () => {
       });
     }
 
-    if (filters.subAreaId !== 'all') {
-      subjects = subjects.filter(s => String(s.subAreaId) === filters.subAreaId);
+    if (filters.subAreaIds.length > 0) {
+      subjects = subjects.filter(s => filters.subAreaIds.includes(String(s.subAreaId)));
     }
 
     return subjects.sort(sortSubjects);
-  }, [turmaAtual, data.subjects, data.subAreas, data.knowledgeAreas, filters.type, filters.areaId, filters.subAreaId]);
+  }, [turmaAtual, data.subjects, data.subAreas, data.knowledgeAreas, filters.type, filters.areaId, filters.subAreaIds]);
 
   const rows = useMemo(() => {
     if (!filters.turmaId) return [];
@@ -495,14 +495,26 @@ const ClassCouncil: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ano Letivo</label>
-              <select value={filters.year} onChange={e => setFilters({ ...filters, year: e.target.value })} className="w-full h-11 px-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-black text-slate-700 outline-none">
+              <select
+                title="Ano Letivo"
+                aria-label="Selecionar Ano Letivo"
+                value={filters.year}
+                onChange={e => setFilters({ ...filters, year: e.target.value })}
+                className="w-full h-11 px-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-black text-slate-700 outline-none"
+              >
                 <option value="2026">2026</option>
                 <option value="2025">2025</option>
               </select>
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Turma *</label>
-              <select value={filters.turmaId} onChange={e => setFilters({ ...filters, turmaId: e.target.value })} className="w-full h-11 px-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-black text-slate-700 outline-none">
+              <select
+                title="Turma"
+                aria-label="Selecionar Turma"
+                value={filters.turmaId}
+                onChange={e => setFilters({ ...filters, turmaId: e.target.value })}
+                className="w-full h-11 px-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-black text-slate-700 outline-none"
+              >
                 <option value="">Selecione...</option>
                 {classesDoAno.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -512,6 +524,8 @@ const ClassCouncil: React.FC = () => {
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Bimestre de Referência</label>
             <select
+              title="Bimestre de Referência"
+              aria-label="Selecionar Bimestre de Referência"
               value={filters.referenceTerm}
               onChange={e => setFilters({ ...filters, referenceTerm: e.target.value })}
               className="w-full h-11 px-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-black text-indigo-700 outline-none focus:ring-2 focus:ring-indigo-200"
@@ -551,7 +565,7 @@ const ClassCouncil: React.FC = () => {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Formação</span>
               <select
                 value={filters.type}
-                onChange={e => setFilters({ ...filters, type: e.target.value, areaId: 'all', subAreaId: 'all' })}
+                onChange={e => setFilters({ ...filters, type: e.target.value, areaId: 'all', subAreaIds: [] })}
                 className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all text-slate-700"
               >
                 <option value="all">Todas as formações</option>
@@ -562,7 +576,7 @@ const ClassCouncil: React.FC = () => {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Área de Conhecimento</span>
               <select
                 value={filters.areaId}
-                onChange={e => setFilters({ ...filters, areaId: e.target.value, subAreaId: 'all' })}
+                onChange={e => setFilters({ ...filters, areaId: e.target.value, subAreaIds: [] })}
                 className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all text-slate-700"
               >
                 <option value="all">Todas as áreas</option>
@@ -570,25 +584,73 @@ const ClassCouncil: React.FC = () => {
               </select>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subárea</span>
-              <select
-                value={filters.subAreaId}
-                onChange={e => setFilters({ ...filters, subAreaId: e.target.value })}
-                className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all text-slate-700"
-              >
-                <option value="all">Todas as subáreas</option>
-                {filteredSubAreas.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subáreas (Múltipla)</span>
+              <div className="relative group/multiselect">
+                <div className="min-h-[46px] p-2 bg-slate-50 border border-slate-100 rounded-2xl flex flex-wrap gap-2 transition-all focus-within:bg-white focus-within:border-indigo-200">
+                  {filters.subAreaIds.length === 0 ? (
+                    <span className="text-xs font-bold text-slate-400 py-1.5 ml-2">Todas as subáreas</span>
+                  ) : (
+                    filters.subAreaIds.map(id => {
+                      const sa = data.subAreas.find(s => s.id === id);
+                      return (
+                        <span key={id} className="bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase px-3 py-1.5 rounded-xl flex items-center gap-2 animate-in zoom-in-95">
+                          {sa?.name}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilters({ ...filters, subAreaIds: filters.subAreaIds.filter(x => x !== id) });
+                            }}
+                            className="hover:text-red-500 transition-colors"
+                          >✕</button>
+                        </span>
+                      );
+                    })
+                  )}
+                  <div className="ml-auto flex items-center pr-2 pointer-events-none">
+                    <Icon name="chevronDown" className="w-4 h-4 text-slate-400" />
+                  </div>
+                </div>
+
+                <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl z-[60] max-h-60 overflow-y-auto hidden group-hover/multiselect:block hover:block custom-scrollbar p-2">
+                  <div
+                    onClick={() => setFilters({ ...filters, subAreaIds: [] })}
+                    className="p-3 text-xs font-black uppercase tracking-tight text-slate-500 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors flex justify-between items-center"
+                  >
+                    <span>Limpar Seleção</span>
+                    {filters.subAreaIds.length === 0 && <span className="text-indigo-600">✓</span>}
+                  </div>
+                  <div className="h-px bg-slate-50 my-2" />
+                  {filteredSubAreas.map(sa => {
+                    const isSelected = filters.subAreaIds.includes(String(sa.id));
+                    return (
+                      <div
+                        key={sa.id}
+                        onClick={() => {
+                          const newIds = isSelected
+                            ? filters.subAreaIds.filter(x => x !== String(sa.id))
+                            : [...filters.subAreaIds, String(sa.id)];
+                          setFilters({ ...filters, subAreaIds: newIds });
+                        }}
+                        className={`p-3 text-xs font-bold rounded-xl cursor-pointer transition-all flex items-center justify-between ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                      >
+                        <span className="uppercase">{sa.name}</span>
+                        {isSelected && <span className="font-black">✓</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mínimo Médias ≥ 5</span>
-              <input type="number" value={filters.minHigh} onChange={e => setFilters({ ...filters, minHigh: e.target.value })} placeholder="Qtd..." className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white" />
+              <input type="number" value={filters.minHigh} onChange={e => setFilters({ ...filters, minHigh: e.target.value })} placeholder="Qtd..." className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all" />
             </div>
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mínimo Médias &lt; 5</span>
-              <input type="number" value={filters.minLow} onChange={e => setFilters({ ...filters, minLow: e.target.value })} placeholder="Qtd..." className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white" />
+              <input type="number" value={filters.minLow} onChange={e => setFilters({ ...filters, minLow: e.target.value })} placeholder="Qtd..." className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:bg-white transition-all" />
             </div>
           </div>
         </div>
