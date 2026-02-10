@@ -203,9 +203,9 @@ const GradeManagement: React.FC = () => {
 
       const myClassIds = new Set(data.assignments
         .filter(a => String(a.teacherId) === String(teacher.id))
-        .map(a => a.classId)
+        .map(a => String(a.classId))
       );
-      return classes.sort(sortClasses);
+      return classes.filter(c => myClassIds.has(String(c.id))).sort(sortClasses);
     }
 
     return classes.sort(sortClasses);
