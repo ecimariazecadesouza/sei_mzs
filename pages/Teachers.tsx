@@ -36,6 +36,13 @@ const Teachers: React.FC = () => {
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'teachers' | 'assignments', label: string } | null>(null);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  // Modal State
+  const [viewingTeacher, setViewingTeacher] = useState<Teacher | null>(null);
+
   // Filtragem de dados baseada no ano letivo
   const classesDoAno = useMemo(() =>
     data.classes.filter(c => c.year === filterYear).sort(sortClasses)
@@ -56,16 +63,21 @@ const Teachers: React.FC = () => {
       .sort(sortSubjects);
   }, [selectedClasses, data.classes, data.subjects]);
 
-  const atribuicoesDoAno = useMemo(() => {
-    return data.assignments.filter(ass => {
-      const cls = data.classes.find(c => String(c.id) === String(ass.classId));
-      return cls?.year === filterYear;
-    }).sort((a, b) => {
-      const tA = data.teachers.find(t => String(t.id) === String(a.teacherId));
-      const tB = data.teachers.find(t => String(t.id) === String(b.teacherId));
-      return (tA?.name || '').localeCompare(tB?.name || '');
-    });
-  }, [data.assignments, data.classes, data.teachers, filterYear]);
+
+
+  // Pagination Logic
+  const sortedTeachers = useMemo(() => [...data.teachers].sort(sortTeachers), [data.teachers]);
+  const totalPages = Math.ceil(sortedTeachers.length / itemsPerPage);
+  const currentTeachers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return sortedTeachers.slice(start, start + itemsPerPage);
+  }, [sortedTeachers, currentPage]);
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   // Handlers
   const handleAddTeacher = async (e: React.FormEvent) => {
@@ -319,12 +331,34 @@ const Teachers: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center justify-between">
               Corpo Docente Ativo
-              <span className="bg-slate-200 px-3 py-1 rounded-full text-slate-600">{data.teachers.length} Cadastrados</span>
+              <div className="flex items-center gap-4">
+                <span className="bg-slate-200 px-3 py-1 rounded-full text-slate-600">
+                  {currentTeachers.length} de {data.teachers.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    &lt;
+                  </button>
+                  <span className="text-xs font-bold text-slate-600">Page {currentPage} of {totalPages}</span>
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    &gt;
+                  </button>
+                </div>
+              </div>
+
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[...data.teachers].sort(sortTeachers).map(teacher => (
+              {currentTeachers.map(teacher => (
                 <div key={teacher.id} className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-200 transition-all">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 cursor-pointer" onClick={() => setViewingTeacher(teacher)}>
                     <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-indigo-50 group-hover:text-indigo-400 transition-colors">
                       <Icon name="user" className="w-6 h-6" />
                     </div>
@@ -333,88 +367,25 @@ const Teachers: React.FC = () => {
                       <p className="text-[10px] font-bold text-slate-400 mt-0.5 lowercase truncate">{teacher.email}</p>
                     </div>
                   </div>
-                  <button
-                    title="Excluir Professor"
-                    aria-label={`Excluir professor ${teacher.name}`}
-                    onClick={() => setDeleteConfirm({ id: teacher.id, type: 'teachers', label: teacher.name })}
-                    className="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                  >
-                    <Icon name="trash" className="w-4 h-4" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      title="Ver Atribuições"
+                      onClick={() => setViewingTeacher(teacher)}
+                      className="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all"
+                    >
+                      <Icon name="book" className="w-4 h-4" />
+                    </button>
+                    <button
+                      title="Excluir Professor"
+                      aria-label={`Excluir professor ${teacher.name}`}
+                      onClick={() => setDeleteConfirm({ id: teacher.id, type: 'teachers', label: teacher.name })}
+                      className="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    >
+                      <Icon name="trash" className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Lista de Aulas e Horários do Ano */}
-          <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden">
-            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
-                <Icon name="book" className="text-indigo-600" />
-                Vínculos em {filterYear}
-              </h3>
-              <div className="text-[10px] font-black text-slate-400 uppercase">
-                Aulas Atribuídas: {atribuicoesDoAno.length}
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50/50 border-b border-slate-100 text-slate-400 uppercase text-[10px] font-black tracking-widest">
-                  <tr>
-                    <th className="px-8 py-5">Professor</th>
-                    <th className="px-8 py-5">Disciplina</th>
-                    <th className="px-8 py-5">Turma</th>
-                    <th className="px-8 py-5 text-right">Ação</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {atribuicoesDoAno.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-8 py-20 text-center opacity-30 text-slate-400 italic font-bold">
-                        Nenhuma aula atribuída para o ano letivo de {filterYear}.
-                      </td>
-                    </tr>
-                  )}
-                  {atribuicoesDoAno.map(ass => {
-                    const teacher = data.teachers.find(t => String(t.id) === String(ass.teacherId));
-                    const subject = data.subjects.find(s => String(s.id) === String(ass.subjectId));
-                    const cls = data.classes.find(c => String(c.id) === String(ass.classId));
-
-                    return (
-                      <tr key={ass.id} className="hover:bg-slate-50/30 group transition-colors">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300 font-black text-[10px]">T</div>
-                            <span className="font-black text-slate-700 text-xs uppercase">{teacher?.name || '---'}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span className="text-xs font-bold text-slate-500 uppercase">{subject?.name || '---'}</span>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span className="px-3 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl text-[10px] font-black uppercase shadow-sm">
-                            {cls?.name || '---'}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5 text-right">
-                          <button
-                            onClick={() => setDeleteConfirm({
-                              id: ass.id,
-                              type: 'assignments',
-                              label: `aula de ${subject?.name} para ${teacher?.name}`
-                            })}
-                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                            title="Remover Atribuição"
-                          >
-                            <Icon name="trash" className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
             </div>
           </div>
 
@@ -447,6 +418,75 @@ const Teachers: React.FC = () => {
                 className="flex-1 py-4 bg-red-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-red-100 hover:bg-red-700"
               >
                 Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TEACHER DETAILS MODAL */}
+      {viewingTeacher && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[120] p-4">
+          <div className="bg-white rounded-[40px] w-full max-w-2xl shadow-2xl overflow-hidden p-8 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-2xl font-black text-slate-800 tracking-tight uppercase">{viewingTeacher.name}</h3>
+                <p className="text-sm font-medium text-slate-500 lowercase">{viewingTeacher.email}</p>
+              </div>
+              <button onClick={() => setViewingTeacher(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
+                <span className="text-xl font-bold">x</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+              <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Icon name="book" className="text-indigo-600" />
+                Vínculos ({filterYear})
+              </h4>
+
+              {data.assignments.filter(a => String(a.teacherId) === String(viewingTeacher.id)).filter(a => {
+                const cls = data.classes.find(c => String(c.id) === String(a.classId));
+                return cls?.year === filterYear;
+              }).length === 0 ? (
+                <p className="text-center text-slate-400 italic py-8">Nenhuma atribuição encontrada para este professor em {filterYear}.</p>
+              ) : (
+                <div className="space-y-3">
+                  {data.assignments
+                    .filter(a => String(a.teacherId) === String(viewingTeacher.id))
+                    .filter(a => {
+                      const cls = data.classes.find(c => String(c.id) === String(a.classId));
+                      return cls?.year === filterYear;
+                    })
+                    .map(assignment => {
+                      const cls = data.classes.find(c => String(c.id) === String(assignment.classId));
+                      const subj = data.subjects.find(s => String(s.id) === String(assignment.subjectId));
+                      return (
+                        <div key={assignment.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:shadow-sm transition-all">
+                          <div>
+                            <p className="font-black text-slate-700 text-xs uppercase">{cls?.name}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">{subj?.name}</p>
+                          </div>
+                          <button
+                            onClick={() => setDeleteConfirm({
+                              id: assignment.id,
+                              type: 'assignments',
+                              label: `aula de ${subj?.name} na turma ${cls?.name}`
+                            })}
+                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            title="Remover Atribuição"
+                          >
+                            <Icon name="trash" className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )
+                    })}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setViewingTeacher(null)} className="px-6 py-3 bg-slate-100 text-slate-600 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200">
+                Fechar
               </button>
             </div>
           </div>
